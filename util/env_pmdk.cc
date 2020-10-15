@@ -246,7 +246,7 @@ class PmdkWritableFile final : public WritableFile {
         now_off_(exist_file ? length : 0) { }
 
   ~PmdkWritableFile() override {
-    this->Close();
+    Close();
     /*
     if (mmap_base_ != NULL) {
       pmem_unmap(static_cast<void *>(mmap_base_), length_);
@@ -285,16 +285,20 @@ class PmdkWritableFile final : public WritableFile {
   }
 
   Status Close() override {
-    Flush();
+    FlushBuffer();
     if (mmap_base_ != NULL) {
+      //mu_.Lock();
       pmem_unmap(static_cast<void *>(mmap_base_), length_);
       size_t new_size;
       mmap_base_ = reinterpret_cast<char *>(pmem_map_file(filename_.c_str(),
                                                           now_off_,
                                                           PMEM_FILE_CREATE,
                                                           0666, &new_size, NULL));
-      pmem_unmap(static_cast<void *>(mmap_base_), new_size);
+      if (mmap_base_ != NULL) {
+        pmem_unmap(static_cast<void *>(mmap_base_), new_size);
+      }
       mmap_base_ = NULL;
+      //mu_.Unlock();
     }
     return Status::OK();
     /*
@@ -338,7 +342,7 @@ class PmdkWritableFile final : public WritableFile {
   }
 
   Status WriteUnbuffered(const char* data, size_t size) {
-    mu_.Lock();
+    //mu_.Lock();
     while (now_off_ + size > length_) {
       pmem_unmap(static_cast<void *>(mmap_base_), length_);
       size_t new_size;
@@ -350,7 +354,7 @@ class PmdkWritableFile final : public WritableFile {
     }
     pmem_memcpy(mmap_base_+now_off_, data, size, PMEM_F_MEM_NONTEMPORAL);
     now_off_ += size;
-    mu_.Unlock();
+    //mu_.Unlock();
     return Status::OK();
   }
 
