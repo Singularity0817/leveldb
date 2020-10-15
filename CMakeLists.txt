@@ -218,8 +218,10 @@ if (WIN32)
 else (WIN32)
   target_sources(leveldb
     PRIVATE
-      "util/env_posix.cc"
-      "util/posix_logger.h"
+      #"util/env_posix.cc"
+      #"util/posix_logger.h"
+      "util/env_pmdk.cc"
+      "util/pmdk_logger.h"
   )
 endif (WIN32)
 
@@ -280,6 +282,9 @@ endif(HAVE_TCMALLOC)
 # Needed by port_stdcxx.h
 find_package(Threads REQUIRED)
 target_link_libraries(leveldb Threads::Threads)
+
+LINK_DIRECTORIES("/usr/local/lib")
+target_link_libraries(leveldb pmem)
 
 add_executable(leveldbutil
   "db/leveldbutil.cc"
@@ -375,7 +380,8 @@ if(LEVELDB_BUILD_TESTS)
     if (WIN32)
       leveldb_test("util/env_windows_test.cc")
     else (WIN32)
-      leveldb_test("util/env_posix_test.cc")
+      #leveldb_test("util/env_posix_test.cc")
+      leveldb_test("util/env_pmdk_test.cc")
     endif (WIN32)
   endif(NOT BUILD_SHARED_LIBS)
 endif(LEVELDB_BUILD_TESTS)
