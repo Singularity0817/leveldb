@@ -46,6 +46,11 @@ mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
 ```
 
+### DB Bench usage
+```bash
+./db_bench --benchmarks=fillrandom,readrandom --num=1000000000 --value_size=8 --reads=500000000 --db=/mnt/pmem0/zwh_test/leveldb
+```
+
 ### Building for Windows
 
 First generate the Visual Studio 2017 project/solution files:
