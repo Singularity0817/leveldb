@@ -18,7 +18,7 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
                   TableCache* table_cache, Iterator* iter, FileMetaData* meta) {
   Status s;
   meta->file_size = 0;
-  iter->SeekToFirst();
+  //iter->SeekToFirst();
 
   std::string fname = TableFileName(dbname, meta->number);
   if (iter->Valid()) {
@@ -31,7 +31,8 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
     TableBuilder* builder = new TableBuilder(options, file);
     meta->smallest.DecodeFrom(iter->key());
     Slice key;
-    for (; iter->Valid(); iter->Next()) {
+    /*limit the size of l0 files the same as other levels*/
+    for (; iter->Valid() && (builder->FileSize() < options.max_file_size); iter->Next()) {
       key = iter->key();
       builder->Add(key, iter->value());
     }

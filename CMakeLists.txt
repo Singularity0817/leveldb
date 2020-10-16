@@ -218,10 +218,10 @@ if (WIN32)
 else (WIN32)
   target_sources(leveldb
     PRIVATE
-      #"util/env_posix.cc"
-      #"util/posix_logger.h"
       "util/env_pmdk.cc"
       "util/pmdk_logger.h"
+      #"util/env_posix.cc"
+      #"util/posix_logger.h"
   )
 endif (WIN32)
 
@@ -380,8 +380,8 @@ if(LEVELDB_BUILD_TESTS)
     if (WIN32)
       leveldb_test("util/env_windows_test.cc")
     else (WIN32)
-      #leveldb_test("util/env_posix_test.cc")
       leveldb_test("util/env_pmdk_test.cc")
+      #leveldb_test("util/env_posix_test.cc")
     endif (WIN32)
   endif(NOT BUILD_SHARED_LIBS)
 endif(LEVELDB_BUILD_TESTS)

@@ -136,7 +136,7 @@ class PmdkLogger final : public Logger {
         pmem_unmap(mmap_base_, length_);
         size_t new_size;
         mmap_base_ = reinterpret_cast<char *>(pmem_map_file(filename_.c_str(),
-                                                            length_+1024*1024,
+                                                            length_+32*1024*1024,
                                                             PMEM_FILE_CREATE | PMEM_FILE_SPARSE,
                                                             0666, &new_size, NULL));
         length_ = new_size;

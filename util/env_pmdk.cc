@@ -38,7 +38,7 @@
 #include "libpmem.h"
 #include "util/pmdk_logger.h"
 
-#define FILE_INCREMENT_SIZE ((256))
+#define FILE_INCREMENT_SIZE ((32*1024*1024))
 
 //#define DEBUG
 

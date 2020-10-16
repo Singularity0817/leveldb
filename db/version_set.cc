@@ -1099,6 +1099,12 @@ int VersionSet::NumLevelFiles(int level) const {
 
 const char* VersionSet::LevelSummary(LevelSummaryStorage* scratch) const {
   // Update code if kNumLevels changes
+  static_assert(config::kNumLevels == 2, "");
+  std::snprintf(
+      scratch->buffer, sizeof(scratch->buffer), "files[ %d %d ]",
+      int(current_->files_[0].size()), int(current_->files_[1].size()));
+  return scratch->buffer;
+  /*
   static_assert(config::kNumLevels == 7, "");
   std::snprintf(
       scratch->buffer, sizeof(scratch->buffer), "files[ %d %d %d %d %d %d %d ]",
@@ -1107,6 +1113,7 @@ const char* VersionSet::LevelSummary(LevelSummaryStorage* scratch) const {
       int(current_->files_[4].size()), int(current_->files_[5].size()),
       int(current_->files_[6].size()));
   return scratch->buffer;
+  */
 }
 
 uint64_t VersionSet::ApproximateOffsetOf(Version* v, const InternalKey& ikey) {

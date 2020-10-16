@@ -501,43 +501,55 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
                                 Version* base) {
   mutex_.AssertHeld();
   const uint64_t start_micros = env_->NowMicros();
-  FileMetaData meta;
-  meta.number = versions_->NewFileNumber();
-  pending_outputs_.insert(meta.number);
   Iterator* iter = mem->NewIterator();
-  Log(options_.info_log, "Level-0 table #%llu: started",
-      (unsigned long long)meta.number);
-
+  iter->SeekToFirst();
+  std::vector<FileMetaData *> metas;
   Status s;
-  {
-    mutex_.Unlock();
-    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
-    mutex_.Lock();
-  }
+  while (iter->Valid()) {
+    FileMetaData *meta = new FileMetaData();
+    meta->number = versions_->NewFileNumber();
+    pending_outputs_.insert(meta->number);
+    
+    Log(options_.info_log, "Level-0 table #%llu: started",
+        (unsigned long long)meta->number);
 
-  Log(options_.info_log, "Level-0 table #%llu: %lld bytes %s",
-      (unsigned long long)meta.number, (unsigned long long)meta.file_size,
-      s.ToString().c_str());
-  delete iter;
-  pending_outputs_.erase(meta.number);
-
-  // Note that if file_size is zero, the file has been deleted and
-  // should not be added to the manifest.
-  int level = 0;
-  if (s.ok() && meta.file_size > 0) {
-    const Slice min_user_key = meta.smallest.user_key();
-    const Slice max_user_key = meta.largest.user_key();
-    if (base != nullptr) {
-      level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
+    {
+      mutex_.Unlock();
+      s = BuildTable(dbname_, env_, options_, table_cache_, iter, meta);
+      mutex_.Lock();
     }
-    edit->AddFile(level, meta.number, meta.file_size, meta.smallest,
-                  meta.largest);
-  }
 
+    Log(options_.info_log, "Level-0 table #%llu: %lld bytes %s",
+        (unsigned long long)meta->number, (unsigned long long)meta->file_size,
+        s.ToString().c_str());
+    metas.push_back(meta);
+  }
+  delete iter;
+  int64_t total_bytes_written = 0;
+  for (auto meta : metas) {
+    pending_outputs_.erase(meta->number);
+
+    // Note that if file_size is zero, the file has been deleted and
+    // should not be added to the manifest.
+    int level = 0;
+    if (s.ok() && meta->file_size > 0) {
+      const Slice min_user_key = meta->smallest.user_key();
+      const Slice max_user_key = meta->largest.user_key();
+      if (base != nullptr) {
+        level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
+      }
+      edit->AddFile(level, meta->number, meta->file_size, meta->smallest,
+                    meta->largest);
+    }
+    total_bytes_written += meta->file_size;
+    
+    delete meta;
+  }
   CompactionStats stats;
   stats.micros = env_->NowMicros() - start_micros;
-  stats.bytes_written = meta.file_size;
-  stats_[level].Add(stats);
+  stats.bytes_written = total_bytes_written;
+  stats_[0].Add(stats);
+
   return s;
 }
 
